@@ -1,6 +1,6 @@
 # AI-Assisted Sales Pipeline Command Center
 
-An interactive sales operations portfolio project that analyzes synthetic CRM data for pipeline health, quota attainment, forecast accuracy, rep performance, funnel conversion, and AI-assisted deal risk.
+An interactive sales operations portfolio project that analyzes synthetic CRM data for pipeline health, quota attainment, forecast accuracy, rep performance, funnel stage concentration, and AI-assisted deal risk.
 
 The dashboard is framed around a practical business problem: helping revenue leaders understand whether the team has enough quality pipeline, which deals create forecast risk, and where manager attention should be focused before pipeline and forecast reviews.
 
@@ -22,7 +22,7 @@ This dashboard turns synthetic CRM-style data into those business answers.
 - Pipeline health by stage and segment
 - Rep performance by quota attainment, win rate, deal size, and sales cycle
 - Forecast accuracy comparing Commit deals against actual closed-won revenue
-- Funnel conversion analysis by sales stage
+- Funnel snapshot analysis by sales stage
 - AI-assisted deal risk scoring using transparent rules
 - Recommended action for risky deals
 - Synthetic CRM data generator for safe public portfolio use
