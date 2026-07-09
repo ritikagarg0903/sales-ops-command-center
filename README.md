@@ -2,7 +2,7 @@
 
 An interactive sales operations portfolio project that analyzes synthetic CRM data for pipeline health, quota attainment, forecast accuracy, rep performance, funnel conversion, and AI-assisted deal risk.
 
-The project is designed for entry-level Sales Operations Analyst, Revenue Operations Analyst, GTM Operations Analyst, and Sales Strategy Analyst roles.
+The dashboard is framed around a practical business problem: helping revenue leaders understand whether the team has enough quality pipeline, which deals create forecast risk, and where manager attention should be focused before pipeline and forecast reviews.
 
 ## Why This Project Exists
 
@@ -23,13 +23,11 @@ This dashboard turns synthetic CRM-style data into those business answers.
 - Rep performance by quota attainment, win rate, deal size, and sales cycle
 - Forecast accuracy comparing Commit deals against actual closed-won revenue
 - Funnel conversion analysis by sales stage
-- AI-assisted deal risk scoring using free, transparent rules
+- AI-assisted deal risk scoring using transparent rules
 - Recommended action for risky deals
 - Synthetic CRM data generator for safe public portfolio use
 
 ## AI Approach
-
-This version does not require a paid AI API.
 
 The "AI-assisted" layer uses explainable rules over:
 
@@ -46,9 +44,7 @@ It produces:
 - One-line reason
 - Recommended action
 
-This keeps the demo reliable and free while still showing how unstructured sales notes can be converted into decision-useful insights.
-
-No OpenAI, Anthropic, or paid model key is required for the current version.
+This shows how unstructured sales notes can be converted into decision-useful insights that are easier to review, audit, and act on.
 
 ## Tech Stack
 
@@ -76,8 +72,6 @@ sales-ops-command-center/
 
 ## Run Locally
 
-All required packages are free Python packages.
-
 Install dependencies:
 
 ```bash
@@ -91,23 +85,6 @@ streamlit run app.py
 ```
 
 The first run creates synthetic data files in the `data/` folder if they do not already exist.
-
-## Demo Talk Track
-
-1. Start with the Executive Overview.
-   Explain that raw pipeline is not enough; sales ops also checks weighted coverage against quota gap.
-
-2. Move to Pipeline Health.
-   Show where pipeline dollars sit by stage and whether deals are aging.
-
-3. Move to Rep Performance.
-   Compare attainment, win rate, average deal size, and sales cycle.
-
-4. Move to Forecast Accuracy.
-   Explain why Commit accuracy matters for leadership planning.
-
-5. End with AI Deal Risk.
-   Show how notes and activity signals are summarized into risk level, reason, and recommended action.
 
 ## Synthetic Data Disclaimer
 
