@@ -91,12 +91,11 @@ with st.sidebar:
 
     selected_segments = st.multiselect("Segment", sorted(deals["segment"].unique()))
     selected_reps = st.multiselect("Sales rep", sorted(deals["rep_name"].unique()))
-    selected_categories = st.multiselect("Forecast category", sorted(deals["forecast_category"].unique()))
 
     st.divider()
     st.caption("Data is synthetic. Filters apply across every dashboard section.")
 
-filtered = filter_deals(deals, selected_quarter, selected_segments, selected_reps, selected_categories)
+filtered = filter_deals(deals, selected_quarter, selected_segments, selected_reps, [])
 if filtered.empty:
     st.warning(
         "No deals match the current filters. Clear one or more filters to restore dashboard results."
@@ -134,10 +133,6 @@ with tabs[0]:
     col4.metric("Pipeline coverage", f"{coverage['pipeline_coverage']:.2f}x")
     col5.metric("High-risk pipeline", money(high_risk["deal_amount"].sum()))
 
-    if selected_categories and all(category in {"Closed", "Omitted"} for category in selected_categories):
-        insight(
-            "The selected forecast category contains closed or omitted deals, so open-pipeline metrics are expected to be $0."
-        )
     if coverage["remaining_quota_gap"] > 0:
         insight(
             f"The team has {coverage['pipeline_coverage']:.2f}x raw coverage and "
