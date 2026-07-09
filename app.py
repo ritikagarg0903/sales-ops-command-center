@@ -44,6 +44,12 @@ def money(value: float) -> str:
     return f"${value:,.0f}"
 
 
+def current_quarter_label() -> str:
+    today = pd.Timestamp.today()
+    quarter = ((today.month - 1) // 3) + 1
+    return f"{today.year} Q{quarter}"
+
+
 @st.cache_data
 def load_data() -> tuple[pd.DataFrame, pd.DataFrame]:
     if not DEALS_PATH.exists() or not QUOTAS_PATH.exists():
@@ -86,16 +92,16 @@ st.caption(
 with st.sidebar:
     st.header("Filters")
     quarters = sorted(deals["close_quarter"].dropna().unique())
-    default_quarter = quarters[-1] if quarters else None
+    current_quarter = current_quarter_label()
+    default_quarter = current_quarter if current_quarter in quarters else quarters[-1]
     selected_quarter = st.selectbox("Close quarter", quarters, index=quarters.index(default_quarter))
 
     selected_segments = st.multiselect("Segment", sorted(deals["segment"].unique()))
-    selected_reps = st.multiselect("Sales rep", sorted(deals["rep_name"].unique()))
 
     st.divider()
-    st.caption("Data is synthetic. Filters apply across every dashboard section.")
+    st.caption("Data is synthetic. Quarter and segment filters apply across every dashboard section.")
 
-filtered = filter_deals(deals, selected_quarter, selected_segments, selected_reps, [])
+filtered = filter_deals(deals, selected_quarter, selected_segments, [], [])
 if filtered.empty:
     st.warning(
         "No deals match the current filters. Clear one or more filters to restore dashboard results."
@@ -115,7 +121,7 @@ tabs = st.tabs(
         "Pipeline Health",
         "Rep Performance",
         "Forecast Accuracy",
-        "Funnel Conversion",
+        "Funnel Snapshot",
         "AI Deal Risk",
     ]
 )
@@ -241,15 +247,21 @@ with tabs[2]:
 
     left, right = st.columns(2)
     with left:
-        st.plotly_chart(
-            bar_chart(rep_table, "rep_name", "attainment_pct", title="Quota Attainment by Rep"),
-            use_container_width=True,
-        )
+        if rep_table["attainment_pct"].sum() == 0:
+            st.warning("No closed-won revenue is available for quota attainment in the selected period.")
+        else:
+            st.plotly_chart(
+                bar_chart(rep_table, "rep_name", "attainment_pct", title="Quota Attainment by Rep"),
+                use_container_width=True,
+            )
     with right:
-        st.plotly_chart(
-            bar_chart(rep_table, "rep_name", "win_rate", title="Win Rate by Rep"),
-            use_container_width=True,
-        )
+        if rep_table["win_rate"].sum() == 0:
+            st.warning("No closed won/lost outcomes are available for win-rate comparison in the selected period.")
+        else:
+            st.plotly_chart(
+                bar_chart(rep_table, "rep_name", "win_rate", title="Win Rate by Rep"),
+                use_container_width=True,
+            )
 
     top_rep = rep_table.sort_values("attainment_pct", ascending=False).head(1)
     if not top_rep.empty:
@@ -328,8 +340,8 @@ with tabs[3]:
 
 with tabs[4]:
     section_header(
-        "Funnel Conversion",
-        "Stage movement and where deals appear to stall or fall out.",
+        "Funnel Snapshot",
+        "Current stage distribution and likely pressure points in the active funnel.",
     )
 
     conversion = stage_conversion(filtered)
@@ -344,12 +356,12 @@ with tabs[4]:
     fig.update_layout(height=390)
     st.plotly_chart(fig, use_container_width=True)
 
-    open_conversion = conversion.dropna(subset=["conversion_to_next_pct"])
-    if not open_conversion.empty:
-        weakest = open_conversion.sort_values("conversion_to_next_pct").iloc[0]
+    active_stages = conversion[conversion["stage"].isin(OPEN_STAGES)]
+    if not active_stages.empty:
+        largest_stage = active_stages.sort_values("deal_count", ascending=False).iloc[0]
         insight(
-            f"The weakest stage movement is from {weakest['stage']} to the next stage at "
-            f"{weakest['conversion_to_next_pct']:.1f}%, highlighting a likely funnel constraint."
+            f"The largest active-stage concentration is {largest_stage['stage']} with "
+            f"{int(largest_stage['deal_count'])} deals, which is where pipeline review should look first."
         )
 
     st.dataframe(conversion, use_container_width=True, hide_index=True)
