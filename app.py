@@ -79,8 +79,8 @@ deals, quotas = load_data()
 
 st.title("AI-Assisted Sales Pipeline Command Center")
 st.caption(
-    "Synthetic CRM analytics portfolio project for sales operations roles. "
-    "AI-assisted insights use free, transparent rule-based scoring in this version."
+    "A CRM command center for spotting pipeline risk, forecast gaps, rep performance patterns, "
+    "and deals that need manager attention."
 )
 
 with st.sidebar:
@@ -94,9 +94,15 @@ with st.sidebar:
     selected_categories = st.multiselect("Forecast category", sorted(deals["forecast_category"].unique()))
 
     st.divider()
-    st.caption("Data is synthetic and safe for public portfolio use.")
+    st.caption("Data is synthetic. Filters apply across every dashboard section.")
 
 filtered = filter_deals(deals, selected_quarter, selected_segments, selected_reps, selected_categories)
+if filtered.empty:
+    st.warning(
+        "No deals match the current filters. Clear one or more filters to restore dashboard results."
+    )
+    st.stop()
+
 filtered_open = open_deals(filtered)
 attainment = quota_attainment(filtered, quotas, selected_quarter)
 coverage = pipeline_coverage(filtered, attainment)
@@ -128,6 +134,10 @@ with tabs[0]:
     col4.metric("Pipeline coverage", f"{coverage['pipeline_coverage']:.2f}x")
     col5.metric("High-risk pipeline", money(high_risk["deal_amount"].sum()))
 
+    if selected_categories and all(category in {"Closed", "Omitted"} for category in selected_categories):
+        insight(
+            "The selected forecast category contains closed or omitted deals, so open-pipeline metrics are expected to be $0."
+        )
     if coverage["remaining_quota_gap"] > 0:
         insight(
             f"The team has {coverage['pipeline_coverage']:.2f}x raw coverage and "
@@ -144,16 +154,22 @@ with tabs[0]:
 
     left, right = st.columns(2)
     with left:
-        st.plotly_chart(
-            bar_chart(stage_pipeline, "stage", "deal_amount", title="Open Pipeline by Stage"),
-            use_container_width=True,
-        )
+        if stage_pipeline.empty:
+            st.warning("No open pipeline matches the selected filters.")
+        else:
+            st.plotly_chart(
+                bar_chart(stage_pipeline, "stage", "deal_amount", title="Open Pipeline by Stage"),
+                use_container_width=True,
+            )
     with right:
         risk_by_segment = high_risk.groupby("segment", as_index=False)["deal_amount"].sum()
-        st.plotly_chart(
-            bar_chart(risk_by_segment, "segment", "deal_amount", title="High-Risk Pipeline by Segment"),
-            use_container_width=True,
-        )
+        if risk_by_segment.empty:
+            st.warning("No high-risk open pipeline matches the selected filters.")
+        else:
+            st.plotly_chart(
+                bar_chart(risk_by_segment, "segment", "deal_amount", title="High-Risk Pipeline by Segment"),
+                use_container_width=True,
+            )
 
 with tabs[1]:
     section_header(
@@ -170,14 +186,20 @@ with tabs[1]:
 
     left, right = st.columns(2)
     with left:
-        st.plotly_chart(
-            bar_chart(stage_pipeline, "stage", "weighted_pipeline", title="Weighted Pipeline by Stage"),
-            use_container_width=True,
-        )
+        if stage_pipeline.empty:
+            st.warning("No open pipeline matches the selected filters.")
+        else:
+            st.plotly_chart(
+                bar_chart(stage_pipeline, "stage", "weighted_pipeline", title="Weighted Pipeline by Stage"),
+                use_container_width=True,
+            )
     with right:
-        fig = px.pie(segment_pipeline, values="deal_amount", names="segment", title="Open Pipeline by Segment")
-        fig.update_layout(height=390)
-        st.plotly_chart(fig, use_container_width=True)
+        if segment_pipeline.empty:
+            st.warning("No open pipeline segment mix is available for the selected filters.")
+        else:
+            fig = px.pie(segment_pipeline, values="deal_amount", names="segment", title="Open Pipeline by Segment")
+            fig.update_layout(height=390)
+            st.plotly_chart(fig, use_container_width=True)
 
     aged = stale_deals(filtered, min_days=45)
     aged_value = aged["deal_amount"].sum()
@@ -340,12 +362,11 @@ with tabs[4]:
 with tabs[5]:
     section_header(
         "AI Deal Risk",
-        "Free AI-assisted risk triage using explainable rules over notes, stage age, activity, and forecast status.",
+        "AI-assisted risk triage using explainable rules over notes, stage age, activity, and forecast status.",
     )
 
     st.caption(
-        "This version intentionally avoids paid APIs. The output is labeled AI-assisted because it mimics "
-        "how an analyst would summarize unstructured deal notes into risk, reason, and action."
+        "The risk layer summarizes unstructured deal notes into a risk level, reason, and recommended action."
     )
 
     risk_summary = (
@@ -365,15 +386,21 @@ with tabs[5]:
 
     left, right = st.columns(2)
     with left:
-        st.plotly_chart(
-            bar_chart(risk_summary, "ai_risk_level", "pipeline_value", title="Open Pipeline by Risk Level"),
-            use_container_width=True,
-        )
+        if risk_summary.empty:
+            st.warning("No open deals are available for risk scoring under the selected filters.")
+        else:
+            st.plotly_chart(
+                bar_chart(risk_summary, "ai_risk_level", "pipeline_value", title="Open Pipeline by Risk Level"),
+                use_container_width=True,
+            )
     with right:
-        st.plotly_chart(
-            bar_chart(risk_rep, "rep_name", "deal_amount", title="High-Risk Pipeline by Rep"),
-            use_container_width=True,
-        )
+        if risk_rep.empty:
+            st.warning("No high-risk open deals are available under the selected filters.")
+        else:
+            st.plotly_chart(
+                bar_chart(risk_rep, "rep_name", "deal_amount", title="High-Risk Pipeline by Rep"),
+                use_container_width=True,
+            )
 
     if not high_risk.empty:
         largest = high_risk.sort_values("deal_amount", ascending=False).iloc[0]
